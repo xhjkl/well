@@ -11,7 +11,7 @@ async fn main() -> Result<(), Error> {
     // Read the secret we will be using either from the environment or from the `.env` file.
     let secret = env::secret_key_from_env().or_else(env::secret_key_from_dotenv_file);
     let Some(ref secret) = secret else {
-        return Err("env".into());
+        return Err("expected env `OPENAI_SECRET` to be set".into());
     };
 
     // Pre-populate the conversation with the context prompt.
