@@ -1,0 +1,20 @@
+[package]
+name = "well"
+description = "chat with your codebase"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+colored = "2"
+dotenvy = "0.15"
+git2 = { version = "0.17", features = ["vendored-libgit2", "vendored-openssl"] }
+reqwest = { version = "0.11", features = ["json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1.34", features = ["full"] }
+
+[profile.release]
+opt-level = "z"
+codegen-units = 1
+lto = "fat"
+strip = true
