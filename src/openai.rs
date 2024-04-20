@@ -63,13 +63,17 @@ impl Chat {
     }
 
     /// Generate the next message in the conversation.
-    pub async fn complete(&self, messages: &[Message]) -> Result<Completion, Box<dyn Error>> {
+    pub async fn complete(
+        &self,
+        model: &str,
+        messages: &[Message],
+    ) -> Result<Completion, Box<dyn Error>> {
         let functions = all_functions();
         let completion: CompletionResponse = self
             .call(
                 "chat/completions",
                 &json!({
-                    "model": "gpt-3.5-turbo",
+                    "model": model,
                     "messages": messages,
                     "functions": functions,
                 }),

@@ -9,10 +9,11 @@ use error::Error;
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     // Read the secret we will be using either from the environment or from the `.env` file.
-    let secret = env::secret_key_from_env().or_else(env::secret_key_from_dotenv_file);
+    let (secret, model) = env::vars();
     let Some(ref secret) = secret else {
         return Err("expected env `OPENAI_SECRET` to be set".into());
     };
+    let model = model.as_deref().unwrap_or("gpt-4-turbo");
 
     // Pre-populate the conversation with the context prompt.
     let mut messages = openai::prepare();
@@ -34,7 +35,7 @@ async fn main() -> Result<(), Error> {
         // Generate the next message in the conversation.
         let little_snake = io::start_throbber();
         let reply = chat
-            .complete(&messages)
+            .complete(model, &messages)
             .await
             .map_err(|err| err.to_string())?;
         little_snake.stop();
