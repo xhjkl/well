@@ -13,7 +13,7 @@ async fn main() -> Result<(), Error> {
     let Some(ref secret) = secret else {
         return Err("expected env `OPENAI_SECRET` to be set".into());
     };
-    let model = model.as_deref().unwrap_or("gpt-4-turbo");
+    let model = model.as_deref().unwrap_or("gpt-4o");
 
     // Pre-populate the conversation with the context prompt.
     let mut messages = openai::prepare();
