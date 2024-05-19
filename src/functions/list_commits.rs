@@ -1,6 +1,6 @@
 /* spell-checker:words revwalk */
 
-pub fn list_commits(_arguments: &str) -> Result<String, String> {
+pub fn list_commits_in_current_repo() -> Result<String, String> {
     dbg!("<<<");
     let repo = git2::Repository::discover(".").map_err(|err| err.to_string())?;
     dbg!(">>>");
@@ -24,6 +24,15 @@ pub fn list_commits(_arguments: &str) -> Result<String, String> {
     Ok(result)
 }
 
+pub mod rpc {
+    use super::*;
+
+    /// `git log`
+    pub fn list_commits(_arguments: &str) -> Result<String, String> {
+        list_commits_in_current_repo()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -32,7 +41,7 @@ mod tests {
     #[ignore = "run manually to see output"]
     fn commits_listing_format() {
         dbg!("here");
-        let result = list_commits(".").unwrap();
+        let result = list_commits_in_current_repo().unwrap();
         assert_eq!(result, "Initial commit\n");
     }
 }

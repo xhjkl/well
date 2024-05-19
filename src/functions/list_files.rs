@@ -5,21 +5,7 @@ use std::{
     path::Path,
 };
 
-/// True if the path goes above the current directory.
-fn path_spills_up<PathRef: AsRef<Path>>(path: PathRef) -> bool {
-    let mut depth = 0;
-    for component in path.as_ref().components() {
-        match component {
-            std::path::Component::Normal(_) => depth += 1,
-            std::path::Component::ParentDir => depth -= 1,
-            _ => {}
-        }
-        if depth < 0 {
-            return true;
-        }
-    }
-    false
-}
+use super::common::path_spills_up;
 
 /// `0b111` -> `rwx`.
 fn rwx(perms: u32) -> String {
@@ -93,32 +79,24 @@ fn list_files_with_path(path: &Path) -> std::io::Result<String> {
     Ok(result)
 }
 
-/// `ls`.
-pub fn list_files(arguments: &str) -> Result<String, String> {
-    #[derive(serde::Deserialize)]
-    struct Arguments {
-        path: String,
-    }
-    let Arguments { path } = serde_json::from_str(arguments).map_err(|err| err.to_string())?;
+pub mod rpc {
+    use super::*;
 
-    list_files_with_path(Path::new(&path)).map_err(|err| err.to_string())
+    /// `ls`
+    pub fn list_files(arguments: &str) -> Result<String, String> {
+        #[derive(serde::Deserialize)]
+        struct Arguments {
+            path: String,
+        }
+        let Arguments { path } = serde_json::from_str(arguments).map_err(|err| err.to_string())?;
+
+        list_files_with_path(Path::new(&path)).map_err(|err| err.to_string())
+    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-
-    #[test]
-    fn confinement() {
-        assert_eq!(path_spills_up("one"), false);
-        assert_eq!(path_spills_up("one/two"), false);
-        assert_eq!(path_spills_up("/one/two"), false);
-        assert_eq!(path_spills_up("../one"), true);
-        assert_eq!(path_spills_up("../../one"), true);
-        assert_eq!(path_spills_up("one/../two/.."), false);
-        assert_eq!(path_spills_up("one/../two/../.."), true);
-        assert_eq!(path_spills_up("/../../one"), true);
-    }
 
     #[test]
     #[ignore = "run manually to see output"]

@@ -1,17 +1,22 @@
 //! Functions available to the model by the function calling api.
 use serde_json::json;
 
+mod common;
+
+mod query_ast;
+use query_ast::rpc::query_ast;
+
 mod list_files;
-use list_files::list_files;
+use list_files::rpc::list_files;
 
 mod read_file;
-use read_file::read_file;
+use read_file::rpc::read_file;
 
 mod list_commits;
-use list_commits::list_commits;
+use list_commits::rpc::list_commits;
 
 mod show_commit;
-use show_commit::show_commit;
+use show_commit::rpc::show_commit;
 
 fn to_json<T, E>(result: Result<T, E>) -> serde_json::value::Value
 where
