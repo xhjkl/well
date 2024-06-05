@@ -9,6 +9,7 @@ edition = "2021"
 
 [dependencies]
 colored = "2"
+chrono = "0.4"
 dotenvy = "0.15"
 git2 = { version = "0.17", features = ["vendored-libgit2", "vendored-openssl"] }
 reqwest = { version = "0.11", features = ["json"] }
