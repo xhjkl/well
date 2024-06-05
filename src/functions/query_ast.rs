@@ -60,18 +60,17 @@ fn query_ast_of_directory(path: &Path) -> io::Result<String> {
 
     let mut result = String::new();
     for entry in fs::read_dir(path)? {
-        let entry = entry?;
-        let entry_path = entry.path();
-        let path = entry_path.strip_prefix(path).unwrap_or(&entry_path);
-        let escaped_path: String = path
+        let entry = entry?.path();
+        let basename = entry.strip_prefix(path).unwrap_or(&entry);
+        let basename: String = basename
             .to_string_lossy()
             .chars()
             .flat_map(char::escape_default)
             .collect();
-        if path.is_dir() {
-            result.push_str(&format!("{}/ (directory)", escaped_path));
+        if entry.is_dir() {
+            result.push_str(&format!("{}/ (directory)", basename));
         } else {
-            result.push_str(&format!("{} {}", escaped_path, query_ast_of_file(path)?));
+            result.push_str(&format!("{} {}", basename, query_ast_of_file(&entry)?));
         }
         result.push('\n');
     }
