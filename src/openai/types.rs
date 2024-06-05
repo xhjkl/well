@@ -1,3 +1,5 @@
+#![allow(dead_code)] // keeping schema fields at reach, even if not used
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
