@@ -31,7 +31,11 @@ fn describe_entry(entry: DirEntry) -> std::io::Result<String> {
     let permissions = metadata.permissions();
     let file_type = metadata.file_type();
     let file_size = metadata.len();
-    let mtime = metadata.modified()?.elapsed().unwrap().as_secs();
+    let mtime = metadata
+        .modified()?
+        .duration_since(std::time::SystemTime::UNIX_EPOCH)
+        .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))?
+        .as_secs();
     let nlink = metadata.nlink();
 
     let mode = format!(
