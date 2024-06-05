@@ -26,28 +26,28 @@ fn queries_for_filename_extension(ext: Option<&str>) -> Option<(Query, Query)> {
     let ext = ext?;
     match ext {
         "py" => Some((
-            Query::new(tree_sitter_python::language(), python::DEFS).unwrap(),
-            Query::new(tree_sitter_python::language(), python::REFS).unwrap(),
+            Query::new(&tree_sitter_python::language(), python::DEFS).unwrap(),
+            Query::new(&tree_sitter_python::language(), python::REFS).unwrap(),
         )),
         "rs" => Some((
-            Query::new(tree_sitter_rust::language(), rust::DEFS).unwrap(),
-            Query::new(tree_sitter_rust::language(), rust::REFS).unwrap(),
+            Query::new(&tree_sitter_rust::language(), rust::DEFS).unwrap(),
+            Query::new(&tree_sitter_rust::language(), rust::REFS).unwrap(),
         )),
         "ts" | "js" => Some((
             Query::new(
-                tree_sitter_typescript::language_typescript(),
+                &tree_sitter_typescript::language_typescript(),
                 typescript::DEFS,
             )
             .unwrap(),
             Query::new(
-                tree_sitter_typescript::language_typescript(),
+                &tree_sitter_typescript::language_typescript(),
                 typescript::REFS,
             )
             .unwrap(),
         )),
         "tsx" | "jsx" => Some((
-            Query::new(tree_sitter_typescript::language_tsx(), typescript::DEFS).unwrap(),
-            Query::new(tree_sitter_typescript::language_tsx(), typescript::REFS).unwrap(),
+            Query::new(&tree_sitter_typescript::language_tsx(), typescript::DEFS).unwrap(),
+            Query::new(&tree_sitter_typescript::language_tsx(), typescript::REFS).unwrap(),
         )),
         _ => None,
     }
@@ -110,7 +110,7 @@ fn query_ast_of_file(path: &Path) -> io::Result<String> {
     };
     let mut parser = tree_sitter::Parser::new();
     parser
-        .set_language(language)
+        .set_language(&language)
         .expect("the parser should accept all languages");
 
     let source_code = std::fs::read_to_string(path)?;
