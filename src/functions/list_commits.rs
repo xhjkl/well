@@ -1,18 +1,17 @@
-/* spell-checker:words revwalk */
+/* spell-checker:words chrono revwalk */
 
 pub fn list_commits_in_current_repo() -> Result<String, String> {
-    dbg!("<<<");
     let repo = git2::Repository::discover(".").map_err(|err| err.to_string())?;
-    dbg!(">>>");
-
-    dbg!(repo.path());
 
     let mut result = String::new();
-    for rev in repo.revwalk().map_err(|err| err.to_string())?.take(11) {
-        dbg!(&rev);
+    let mut revwalk = repo.revwalk().map_err(|err| err.to_string())?;
+    revwalk.push_head().map_err(|err| err.to_string())?;
+    for rev in revwalk {
         let rev = rev.map_err(|err| err.to_string())?;
         let commit = repo.find_commit(rev).map_err(|err| err.to_string())?;
-        let date = commit.time().seconds();
+        let date = chrono::DateTime::from_timestamp(commit.time().seconds(), 0)
+            .map(|dt| dt.to_rfc3339())
+            .unwrap_or_default();
         let hash = commit.id().to_string();
         let summary = commit.summary().unwrap_or_default();
         let author = commit.author();
@@ -40,8 +39,8 @@ mod tests {
     #[test]
     #[ignore = "run manually to see output"]
     fn commits_listing_format() {
-        dbg!("here");
         let result = list_commits_in_current_repo().unwrap();
-        assert_eq!(result, "Initial commit\n");
+        println!("{}", result);
+        assert!(false);
     }
 }
