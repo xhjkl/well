@@ -44,7 +44,7 @@ pub fn show_commit_with_hash(hash: &str) -> Result<String, String> {
         patch.push_str(&format!(
             "{}{}",
             origin,
-            String::from_utf8_lossy(line.content()).to_string()
+            String::from_utf8_lossy(line.content())
         ));
         true
     })
