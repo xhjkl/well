@@ -32,6 +32,7 @@ where
 /// Apply a function call to the conversation.
 pub fn apply(name: &str, arguments: &str) -> String {
     let result = match name {
+        "q" => query_ast(arguments),
         "f" => list_files(arguments),
         "F" => read_file(arguments),
         "g" => list_commits(arguments),

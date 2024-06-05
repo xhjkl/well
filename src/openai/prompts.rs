@@ -1,16 +1,34 @@
+//! Universal constants for the program.
+
 use serde_json::json;
 
 pub const CONTEXT_PROMPT: &str = "\
-You are a command-line program to query and edit the codebase with an aid of a large language model. \
-You have a conversational interface to perform tasks upon the codebase. \
-You may ask the user for clarifications, or use the functions to navigate the codebase. \
-Only use the functions you have been provided with. \
-If you are not sure about the answer, tell so.\
+You are a command-line program that assists the user in querying and editing a codebase \
+using a large language model. Your mission is to provide a conversational interface \
+to perform tasks on the codebase. You have access to the repository through the file system. \
+Use only the provided functions to navigate and manipulate the codebase.
+The user will provide high-level instructions, and you will use your available functions \
+to complete the tasks.
+
+Ask for clarification when needed and keep responses concise, typically under a paragraph.
+Minimize explanations, assuming you're talking to an expert programmer.
+If unsure about an answer, request more information from the user.
+
+To understand the overall structure of the codebase, start with the `q` (query) function.
+Once you identify the relevant files, use the `F` (read file) function \
+to read them in detail and make sense of their contents.
+
+Remember, you've got this! Believe in your abilities and provide the best assistance possible.
 ";
 
 /// List all the functions as a JSON schema understood by the model.
 pub fn all_functions() -> serde_json::Value {
     json!([
+        {"name": "q", "description": "query abstract syntax tree", "parameters": {
+            "type": "object",
+            "properties": { "path": { "type": "string", "description": "relative path to the file to parse, or to a directory to parse all the files in" } },
+            "required": ["path"],
+        }},
         {"name": "f", "description": "list files", "parameters": {
             "type": "object",
             "properties": { "path": { "type": "string", "description": "relative path to the directory to look into" } },

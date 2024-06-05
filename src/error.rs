@@ -21,6 +21,7 @@ impl fmt::Debug for Error {
     }
 }
 
+#[allow(dead_code)]
 pub struct Exit(Result<(), Error>);
 
 impl From<Result<(), Error>> for Exit {
