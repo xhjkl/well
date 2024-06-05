@@ -6,6 +6,7 @@ repository = "https://github.com/xhjkl/well"
 license = "MIT"
 version = "0.0.0"
 edition = "2021"
+resolver = "2"
 
 [dependencies]
 colored = "2"
