@@ -80,11 +80,16 @@ impl Chat {
             )
             .await?;
 
-        let choice = completion
-            .choices
+        let choices = match completion {
+            CompletionResponse::Success(SuccessfulCompletionResponse { choices, .. }) => choices,
+            CompletionResponse::Failure(ErroneousCompletionResponse { error }) => {
+                return Err(format!("Error from OpenAI: {error:?}").into());
+            }
+        };
+        let choice = choices
             .iter()
             .find(|choice| choice.finish_reason != FinishReason::UsageExceeded)
-            .or_else(|| completion.choices.first());
+            .or_else(|| choices.first());
         let Some(choice) = choice else {
             return Err("💔".into());
         };

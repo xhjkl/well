@@ -2,28 +2,18 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Usage {
     pub completion_tokens: usize,
     pub prompt_tokens: usize,
     pub total_tokens: usize,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct CompletionChoice {
     pub index: usize,
     pub finish_reason: FinishReason,
     pub message: Message,
-}
-
-#[derive(Deserialize)]
-pub struct CompletionResponse {
-    pub id: String,
-    pub object: String,
-    pub created: usize,
-    pub model: String,
-    pub usage: Usage,
-    pub choices: Vec<CompletionChoice>,
 }
 
 #[derive(Deserialize, Serialize, PartialEq, Eq, Debug, Clone, Copy)]
@@ -62,4 +52,35 @@ pub struct Message {
 pub struct FunctionCallRequest {
     pub name: String,
     pub arguments: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ErroneousCompletionResponse {
+    pub error: ErrorDetails,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ErrorDetails {
+    pub code: String,
+    pub message: Option<String>,
+    pub param: Option<String>,
+    #[serde(rename = "type")]
+    pub kind: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct SuccessfulCompletionResponse {
+    pub id: String,
+    pub object: String,
+    pub created: usize,
+    pub model: String,
+    pub usage: Usage,
+    pub choices: Vec<CompletionChoice>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(untagged)]
+pub enum CompletionResponse {
+    Success(SuccessfulCompletionResponse),
+    Failure(ErroneousCompletionResponse),
 }
