@@ -41,10 +41,10 @@ async fn main() -> Result<(), Error> {
             .await
             .map_err(|err| err.to_string())?;
         little_snake.stop();
-        // Then show it.
-        io::show_reply(&reply);
         // And record it.
         messages.push_assistant_message(reply.clone());
+        // And then show it.
+        io::show_reply(&reply);
 
         // If the model asked us to call a function, do so.
         if let Some(call) = reply.function_call {
