@@ -3,10 +3,10 @@ use std::error::Error;
 use serde_json::json;
 
 pub mod prompts;
-pub mod types;
+pub mod schema;
 
 pub use self::prompts::*;
-pub use self::types::*;
+pub use self::schema::*;
 
 /// What the model returns.
 #[derive(Debug, Clone)]
