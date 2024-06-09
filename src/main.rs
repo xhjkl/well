@@ -11,7 +11,7 @@ async fn main() -> Result<(), Error> {
     use openai::VecOfMessages;
 
     // Read the secret we will be using either from the environment or from the `.env` file.
-    let (secret, model) = env::vars();
+    let (api_base, model, secret) = env::vars();
     let Some(ref secret) = secret else {
         return Err("expected env `OPENAI_SECRET` to be set".into());
     };

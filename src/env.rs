@@ -1,11 +1,9 @@
 use std::env;
 
-/// Secret key from `OPENAI_SECRET_KEY`, if set.
-pub fn secret_key_from_env() -> Option<String> {
-    None.or_else(|| env::var("WELL_OPENAI_SECRET").ok())
-        .or_else(|| env::var("WELL_OPENAI_API_KEY").ok())
-        .or_else(|| env::var("OPENAI_SECRET").ok())
-        .or_else(|| env::var("OPENAI_API_KEY").ok())
+/// API base from `OPENAI_API_BASE`, if set.
+pub fn api_base_from_env() -> Option<String> {
+    None.or_else(|| env::var("WELL_OPENAI_API_BASE").ok())
+        .or_else(|| env::var("OPENAI_API_BASE").ok())
 }
 
 /// Model name from `OPENAI_MODEL`, if set.
@@ -14,14 +12,23 @@ pub fn model_name_from_env() -> Option<String> {
         .or_else(|| env::var("OPENAI_MODEL").ok())
 }
 
-/// Get from env `(secret, model_name)`, lazily loading `.env`.
-pub fn vars() -> (Option<String>, Option<String>) {
-    let secret = secret_key_from_env();
+/// Secret key from `OPENAI_API_KEY`, if set.
+pub fn secret_key_from_env() -> Option<String> {
+    None.or_else(|| env::var("WELL_OPENAI_SECRET").ok())
+        .or_else(|| env::var("WELL_OPENAI_API_KEY").ok())
+        .or_else(|| env::var("OPENAI_SECRET").ok())
+        .or_else(|| env::var("OPENAI_API_KEY").ok())
+}
+
+/// Get from env `(api_base, model_name, secret)`, lazily loading `.env`.
+pub fn vars() -> (Option<String>, Option<String>, Option<String>) {
+    let api_base = api_base_from_env();
     let model_name = model_name_from_env();
-    match (secret.as_ref(), model_name.as_ref()) {
-        (Some(_), Some(_)) => {
+    let secret = secret_key_from_env();
+    match (api_base.as_ref(), model_name.as_ref(), secret.as_ref()) {
+        (Some(_), Some(_), Some(_)) => {
             // If both are set, just return them.
-            (secret, model_name)
+            (api_base, model_name, secret)
         }
         _ => {
             // If some are missing, load `.env`, and propagate the values.
@@ -29,8 +36,9 @@ pub fn vars() -> (Option<String>, Option<String>) {
 
             // And then try again.
             (
-                secret.or_else(secret_key_from_env),
+                api_base.or_else(api_base_from_env),
                 model_name.or_else(model_name_from_env),
+                secret.or_else(secret_key_from_env),
             )
         }
     }
