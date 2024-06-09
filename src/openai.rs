@@ -9,20 +9,23 @@ pub use self::prompts::*;
 pub use self::schema::*;
 
 /// What the model returns.
+/// At least one of the fields shall be set.
 #[derive(Debug, Clone)]
 pub struct Completion {
     pub content: Option<String>,
     pub function_call: Option<FunctionCallRequest>,
 }
 
-/// An active connection to a correspondence between several agents.
+/// An HTTP client to the OpenAI Chat Completions API.
+/// It does not hold any persistent connections, each completion is a new request.
 pub struct Chat {
+    base: String,
     client: reqwest::Client,
 }
 
 impl Chat {
     /// Create a new client with the given auth.
-    pub fn new(access_token: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(base: &str, access_token: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let mut headers = reqwest::header::HeaderMap::new();
         let mut authorization =
             reqwest::header::HeaderValue::from_str(&format!("Bearer {}", access_token))?;
@@ -35,7 +38,8 @@ impl Chat {
         let client = reqwest::Client::builder()
             .default_headers(headers)
             .build()?;
-        Ok(Self { client })
+        let base = base.to_string();
+        Ok(Self { base, client })
     }
 
     /// Generic call to any of OpenAI API endpoints.
@@ -48,7 +52,8 @@ impl Chat {
         Body: serde::Serialize + std::fmt::Debug,
         Response: for<'re> serde::Deserialize<'re>,
     {
-        let address = format!("https://api.openai.com/v1/{endpoint}");
+        let base = &self.base;
+        let address = format!("{base}/{endpoint}");
 
         let response: Response = self
             .client
@@ -62,7 +67,7 @@ impl Chat {
         Ok(response)
     }
 
-    /// Generate the next message in the conversation.
+    /// Infer the next message in the conversation.
     pub async fn complete(
         &self,
         model: &str,

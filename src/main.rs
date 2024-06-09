@@ -16,6 +16,7 @@ async fn main() -> Result<(), Error> {
         return Err("expected env `OPENAI_SECRET` to be set".into());
     };
     let model = model.as_deref().unwrap_or("gpt-4o");
+    let api_base = api_base.as_deref().unwrap_or("https://api.openai.com/v1");
 
     // Pre-populate the conversation with the context prompt.
     let mut messages = Vec::<openai::Message>::new_with_context(openai::CONTEXT_PROMPT);
@@ -32,7 +33,7 @@ async fn main() -> Result<(), Error> {
     eprintln!();
 
     // Converse until the user enters an empty line.
-    let chat = openai::Chat::new(secret).map_err(|err| err.to_string())?;
+    let chat = openai::Chat::new(api_base, secret).map_err(|err| err.to_string())?;
     loop {
         // Generate the next message in the conversation.
         let little_snake = io::start_throbber();
