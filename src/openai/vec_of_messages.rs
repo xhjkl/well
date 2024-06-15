@@ -1,3 +1,5 @@
+use super::{Completion, Message, MessageRole};
+
 /// Convenience extensions for a `Vec<Message>`.
 pub trait VecOfMessages {
     /// Make an empty conversation with the given context prompt.
