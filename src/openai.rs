@@ -1,7 +1,6 @@
-use std::error::Error;
-
 use serde_json::json;
 
+pub mod error;
 pub mod prompts;
 pub mod schema;
 
@@ -10,6 +9,9 @@ pub mod vec_of_messages;
 pub use self::prompts::*;
 pub use self::schema::*;
 pub use self::vec_of_messages::VecOfMessages;
+
+/// Result with the right error.
+pub type Result<T> = std::result::Result<T, error::OpenAIError>;
 
 /// What the model returns.
 /// At least one of the fields shall be set.
@@ -28,7 +30,7 @@ pub struct Chat {
 
 impl Chat {
     /// Create a new client with the given auth.
-    pub fn new(base: &str, access_token: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(base: &str, access_token: &str) -> Result<Self> {
         let mut headers = reqwest::header::HeaderMap::new();
         let mut authorization =
             reqwest::header::HeaderValue::from_str(&format!("Bearer {}", access_token))?;
@@ -46,11 +48,7 @@ impl Chat {
     }
 
     /// Generic call to any of OpenAI API endpoints.
-    async fn call<Body, Response>(
-        &self,
-        endpoint: &str,
-        body: &Body,
-    ) -> Result<Response, Box<dyn std::error::Error>>
+    async fn call<Body, Response>(&self, endpoint: &str, body: &Body) -> Result<Response>
     where
         Body: serde::Serialize + std::fmt::Debug,
         Response: for<'re> serde::Deserialize<'re>,
@@ -71,11 +69,7 @@ impl Chat {
     }
 
     /// Infer the next message in the conversation.
-    pub async fn complete(
-        &self,
-        model: &str,
-        messages: &[Message],
-    ) -> Result<Completion, Box<dyn Error>> {
+    pub async fn complete(&self, model: &str, messages: &[Message]) -> Result<Completion> {
         let functions = all_functions();
         let completion: CompletionResponse = self
             .call(
@@ -91,7 +85,7 @@ impl Chat {
         let choices = match completion {
             CompletionResponse::Success(SuccessfulCompletionResponse { choices, .. }) => choices,
             CompletionResponse::Failure(ErroneousCompletionResponse { error }) => {
-                return Err(format!("Error from OpenAI: {error:?}").into());
+                return Err(error::OpenAIError::ProtocolError(error));
             }
         };
         let choice = choices
@@ -99,7 +93,7 @@ impl Chat {
             .find(|choice| choice.finish_reason != FinishReason::UsageExceeded)
             .or_else(|| choices.first());
         let Some(choice) = choice else {
-            return Err("💔".into());
+            return Err(error::OpenAIError::NoChoice);
         };
         let content = choice.message.content.clone();
         let function_call = match choice.finish_reason {
