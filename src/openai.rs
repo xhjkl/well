@@ -30,12 +30,14 @@ pub struct Chat {
 
 impl Chat {
     /// Create a new client with the given auth.
-    pub fn new(base: &str, access_token: &str) -> Result<Self> {
+    pub fn new(base: &str, access_token: Option<&str>) -> Result<Self> {
         let mut headers = reqwest::header::HeaderMap::new();
-        let mut authorization =
-            reqwest::header::HeaderValue::from_str(&format!("Bearer {}", access_token))?;
-        authorization.set_sensitive(true);
-        headers.insert(reqwest::header::AUTHORIZATION, authorization);
+        if let Some(access_token) = access_token {
+            let mut authorization =
+                reqwest::header::HeaderValue::from_str(&format!("Bearer {}", access_token))?;
+            authorization.set_sensitive(true);
+            headers.insert(reqwest::header::AUTHORIZATION, authorization);
+        }
         headers.insert(
             reqwest::header::CONTENT_TYPE,
             reqwest::header::HeaderValue::from_static("application/json"),

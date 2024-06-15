@@ -12,11 +12,12 @@ async fn main() -> Result<(), Error> {
 
     // Read the secret we will be using either from the environment or from the `.env` file.
     let (api_base, model, secret) = env::vars();
-    let Some(ref secret) = secret else {
-        return Err("expected env `OPENAI_SECRET` to be set".into());
-    };
-    let model = model.as_deref().unwrap_or("gpt-4o");
+    if api_base.is_none() && secret.is_none() {
+        return Err("expected env `OPENAI_API_KEY` to be available".into());
+    }
     let api_base = api_base.as_deref().unwrap_or("https://api.openai.com/v1");
+    let model = model.as_deref().unwrap_or("gpt-4o");
+    let secret = secret.as_deref();
 
     // Pre-populate the conversation with the context prompt.
     let mut messages = Vec::<openai::Message>::new_with_context(openai::CONTEXT_PROMPT);
