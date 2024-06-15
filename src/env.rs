@@ -27,7 +27,7 @@ pub fn vars() -> (Option<String>, Option<String>, Option<String>) {
     let secret = secret_key_from_env();
     match (api_base.as_ref(), model_name.as_ref(), secret.as_ref()) {
         (Some(_), Some(_), Some(_)) => {
-            // If both are set, just return them.
+            // If all are set, just return them.
             (api_base, model_name, secret)
         }
         _ => {
