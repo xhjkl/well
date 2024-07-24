@@ -24,30 +24,103 @@ Remember, you've got this! Believe in your abilities and provide the best assist
 /// List all the functions as a JSON schema understood by the model.
 pub fn all_functions() -> serde_json::Value {
     json!([
-        {"name": "q", "description": "query abstract syntax tree", "parameters": {
-            "type": "object",
-            "properties": { "path": { "type": "string", "description": "relative path to the file to parse, or to a directory to parse all the files in" } },
-            "required": ["path"],
-        }},
-        {"name": "f", "description": "list files", "parameters": {
-            "type": "object",
-            "properties": { "path": { "type": "string", "description": "relative path to the directory to look into" } },
-            "required": ["path"],
-        }},
-        {"name": "F", "description": "read file", "parameters": {
-            "type": "object",
-            "properties": { "path": { "type": "string", "description": "relative path to the file to read" } },
-            "required": ["path"],
-        }},
-        {"name": "g", "description": "show commits log", "parameters": {
-            "type": "object",
-            "properties": {},
-        }},
-        {"name": "G", "description": "show certain commit in details", "parameters": {
-            "type": "object",
-            "properties": { "hash": { "type": "string", "description": "hash-like of the commit to show" } },
-            "required": ["hash"],
-        }},
+        {
+            "type": "function",
+            "function": {
+                "name": "q",
+                "description": "query abstract syntax tree",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "relative path to the file to parse, or to a directory to parse all the files in"
+                        }
+                    },
+                    "required": ["path"],
+                },
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "f",
+                "description": "list files",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "relative path to the directory to look into"
+                        }
+                    },
+                    "required": ["path"],
+                },
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "F",
+                "description": "read file",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "relative path to the file to read"
+                        }
+                    },
+                    "required": ["path"],
+                },
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "g",
+                "description": "show commits log",
+                "parameters": {},
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "G",
+                "description": "show certain commit in details",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "hash": {
+                            "type": "string",
+                            "description": "hash-like of the commit to show"
+                        }
+                    },
+                    "required": ["hash"],
+                },
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "p",
+                "description": "patch a file",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "relative path to the file to read"
+                        },
+                        "patch": {
+                            "type": "string",
+                            "description": "path to apply"
+                        }
+                    },
+                    "required": ["path", "patch"],
+                },
+            }
+        },
         // {"name": "r", "description": "ask the user to run a shell command", "parameters": {
         //     "type": "object",
         //     "properties": { "command": { "type": "string", "description": "shell command to run" } },
