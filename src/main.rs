@@ -58,13 +58,9 @@ async fn main() -> Result<(), Error> {
         let calls = reply.message.tool_calls.unwrap_or_default();
         let content = reply.message.content.unwrap_or_default();
 
-        // If the model replied with some textual content, write that down.
-        if !content.is_empty() {
-            // And record it.
-            messages.push_assistant_message(&content, &calls);
-            // And then show it.
-            io::show_reply(&content, &calls);
-        }
+        // Record the reply and the function call ids, if there are any.
+        messages.push_assistant_message(&content, &calls);
+        io::show_reply(&content, &calls);
 
         // If the model asked us to call a function, do so.
         if !calls.is_empty() {
