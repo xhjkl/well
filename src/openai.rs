@@ -13,14 +13,6 @@ pub use self::vec_of_messages::VecOfMessages;
 /// Result with the right error.
 pub type Result<T> = std::result::Result<T, error::OpenAIError>;
 
-/// What the model returns.
-/// At least one of the fields shall be set.
-#[derive(Debug, Clone)]
-pub struct Completion {
-    pub content: Option<String>,
-    pub function_call: Option<FunctionCallRequest>,
-}
-
 /// An HTTP client to the OpenAI Chat Completions API.
 /// It does not hold any persistent connections, each completion is a new request.
 pub struct Chat {
@@ -58,28 +50,40 @@ impl Chat {
         let base = &self.base;
         let address = format!("{base}/{endpoint}");
 
-        let response: Response = self
+        let response = self
             .client
             .post(address)
             .json(body)
             .send()
             .await?
-            .json()
+            .text()
             .await?;
+
+        let response: Response = serde_json::from_str(&response).map_err(|err| {
+            error::OpenAIError::SchemaMismatch(
+                serde_json::to_string_pretty(&body).unwrap(),
+                response,
+                err.to_string(),
+            )
+        })?;
 
         Ok(response)
     }
 
     /// Infer the next message in the conversation.
-    pub async fn complete(&self, model: &str, messages: &[Message]) -> Result<Completion> {
-        let functions = all_functions();
+    pub async fn complete(
+        &self,
+        model: &str,
+        messages: &[Message],
+        tools: &serde_json::Value,
+    ) -> Result<CompletionChoice> {
         let completion: CompletionResponse = self
             .call(
                 "chat/completions",
                 &json!({
                     "model": model,
                     "messages": messages,
-                    "functions": functions,
+                    "tools": tools,
                 }),
             )
             .await?;
@@ -94,17 +98,9 @@ impl Chat {
             .iter()
             .find(|choice| choice.finish_reason != FinishReason::UsageExceeded)
             .or_else(|| choices.first());
-        let Some(choice) = choice else {
+        let Some(choice) = choice.cloned() else {
             return Err(error::OpenAIError::NoChoice);
         };
-        let content = choice.message.content.clone();
-        let function_call = match choice.finish_reason {
-            FinishReason::Call => choice.message.function_call.clone(),
-            _ => None,
-        };
-        Ok(Completion {
-            content,
-            function_call,
-        })
+        Ok(choice)
     }
 }

@@ -8,7 +8,7 @@ use error::Error;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    use openai::VecOfMessages;
+    use openai::VecOfMessages as _;
 
     // Read the secret we will be using either from the environment or from the `.env` file.
     let (api_base, model, secret) = env::vars();
@@ -39,19 +39,39 @@ async fn main() -> Result<(), Error> {
         // Generate the next message in the conversation.
         let little_snake = io::start_throbber();
         let reply = chat
-            .complete(model, &messages)
+            .complete(model, &messages, &openai::all_functions())
             .await
             .map_err(|err| err.to_string())?;
         little_snake.stop();
-        // And record it.
-        messages.push_assistant_message(reply.clone());
-        // And then show it.
-        io::show_reply(&reply);
+
+        // The model may reply to us with a text,
+        // or it may ask us to do something through a tool call.
+        // It also may indicate that the conversation is too large for it to handle.
+        // Or, it may refuse to continue due to policy.
+        // These cases may overlap, so we take the most conservative route.
+        if let Some(refusal) = reply.message.refusal {
+            return Err(refusal.into());
+        }
+        if reply.finish_reason == openai::FinishReason::UsageExceeded {
+            return Err("usage exceeded".into());
+        }
+        let calls = reply.message.tool_calls.unwrap_or_default();
+        let content = reply.message.content.unwrap_or_default();
+
+        // If the model replied with some textual content, write that down.
+        if !content.is_empty() {
+            // And record it.
+            messages.push_assistant_message(&content, &calls);
+            // And then show it.
+            io::show_reply(&content, &calls);
+        }
 
         // If the model asked us to call a function, do so.
-        if let Some(call) = reply.function_call {
-            let result = functions::apply(&call.name, &call.arguments);
-            messages.push_function_call_result(&call.name, &result);
+        if !calls.is_empty() {
+            let result = functions::apply_all(&calls);
+            for (id, result) in result {
+                messages.push_function_call_result(&id, &result);
+            }
 
             // Re-trigger the completion to let the model know how the function call went.
             continue;

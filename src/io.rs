@@ -1,25 +1,25 @@
 use colored::Colorize;
 
-use crate::openai::Completion;
+use crate::openai::ToolCallRequest;
 
 mod throbber;
 pub use throbber::start_throbber;
 
 /// Show the model's reply to the user.
-pub fn show_reply(reply: &Completion) {
-    if let Some(ref call) = reply.function_call {
+pub fn show_reply(content: &str, tool_calls: &[ToolCallRequest]) {
+    for call in tool_calls {
         let call_notch = "<<".bright_cyan().dimmed().bold();
-        let call_name = call.name.cyan();
-        let call_arguments = call.arguments.cyan();
+        let call_name = call.function.name.cyan();
+        let call_arguments = call.function.arguments.cyan();
         eprintln!("{} {}{}", call_notch, call_name, call_arguments);
     }
 
-    if let Some(ref content) = reply.content {
+    if !content.is_empty() {
         let reply_notch = "<<".bright_green().dimmed().bold();
         eprintln!("{} {}", reply_notch, content);
     }
 
-    if reply.content.is_none() && reply.function_call.is_none() {
+    if content.is_empty() && tool_calls.is_empty() {
         let reply_notch = "<<".bright_green().dimmed().bold();
         let nothing = "...".dimmed();
         eprintln!("{} {}", reply_notch, nothing);

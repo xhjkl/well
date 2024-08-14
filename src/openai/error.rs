@@ -10,8 +10,8 @@ pub enum OpenAIError {
     #[error("While sending a request: {0}")]
     HttpError(#[from] reqwest::Error),
 
-    #[error("While Parsing JSON: {0}")]
-    ParseError(#[from] serde_json::Error),
+    #[error("Sent this: {0}\n\nGot this: {1}\n\nWhile Parsing: {2}")]
+    SchemaMismatch(String, String, String),
 
     #[error("Protocol error: {0:?}")]
     ProtocolError(ErrorDetails),
