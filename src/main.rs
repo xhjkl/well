@@ -61,24 +61,10 @@ async fn main() -> Result<(), Error> {
                 return Err("usage exceeded".into());
             }
 
-            let before = messages.len();
             io::show_history_alteration();
 
-            let little_snake = io::start_throbber();
-            let rolled_up = chat.rollup(model, &messages).await;
-            let rolled_up = if let Err(_) = rolled_up {
-                // While `response_format` is not there yet, the structured output is very fragile.
-                chat.rollup(model, &messages).await
-            } else {
-                rolled_up
-            };
-            let rolled_up = rolled_up.map_err(|err| err.to_string())?;
-            little_snake.stop();
-
+            let rolled_up = chat.strip(&messages).await.unwrap();
             messages.clone_from(&rolled_up);
-
-            let after = messages.len();
-            io::show_history_altered(before, after);
 
             // Avoid the crash loop.
             steps_since_last_rollup = 0;

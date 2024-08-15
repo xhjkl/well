@@ -105,47 +105,20 @@ impl Chat {
         Ok(choice)
     }
 
-    /// Make a conversation briefer.
-    pub async fn rollup(&self, model: &str, messages: &[Message]) -> Result<Vec<Message>> {
-        let baked_messages = serde_json::to_string(messages).unwrap();
-        let mut summary_script = Vec::<Message>::new_with_context(rollup::CONTEXT_PROMPT);
-        summary_script.push_user_message(&baked_messages);
-        let summary_script = summary_script;
-
-        // This should probably use `response_format` once it's ready:
-        let completion: CompletionResponse = self
-            .call(
-                "chat/completions",
-                &json!({
-                    "model": model,
-                    "messages": summary_script,
-                }),
-            )
-            .await?;
-
-        let choices = match completion {
-            CompletionResponse::Success(SuccessfulCompletionResponse { choices, .. }) => choices,
-            CompletionResponse::Failure(ErroneousCompletionResponse { error }) => {
-                return Err(error::OpenAIError::ProtocolError(error));
+    /// Make a conversation briefer by forgetting the earlier function call results.
+    pub async fn strip(&self, messages: &[Message]) -> Result<Vec<Message>> {
+        let mut result = messages.to_vec();
+        let mut seen_non_tool = false;
+        for message in result.iter_mut().rev() {
+            if seen_non_tool {
+                if message.role == MessageRole::Tool {
+                    message.content = None;
+                }
             }
-        };
-        let choice = choices
-            .iter()
-            .find(|choice| choice.finish_reason != FinishReason::UsageExceeded)
-            .or_else(|| choices.first());
-        let Some(choice) = choice.cloned() else {
-            return Err(error::OpenAIError::NoChoice);
-        };
-        let content = choice.message.content.unwrap_or_default();
-
-        let messages = serde_json::from_str::<Vec<Message>>(&content).map_err(|err| {
-            error::OpenAIError::SchemaMismatch(
-                serde_json::to_string_pretty(&messages).unwrap(),
-                content,
-                err.to_string(),
-            )
-        })?;
-
-        Ok(messages)
+            if message.role != MessageRole::Tool {
+                seen_non_tool = true;
+            }
+        }
+        Ok(result)
     }
 }
