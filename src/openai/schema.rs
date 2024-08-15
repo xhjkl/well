@@ -27,16 +27,6 @@ pub enum FinishReason {
     Call,
 }
 
-// /# Create a message containing the result of the function call
-// function_call_result_message = {
-//     "role": "tool",
-//     "content": json.dumps({
-//         "order_id": order_id,
-//         "delivery_date": delivery_date.strftime('%Y-%m-%d %H:%M:%S')
-//     }),
-//     "tool_call_id": response['choices'][0]['message']['tool_calls'][0]['id']
-// }
-
 /// Who authored the message.
 #[derive(Eq, Copy, Clone, Deserialize, Serialize, PartialEq, Debug)]
 #[serde(rename_all = "lowercase")]
