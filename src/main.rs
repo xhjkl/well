@@ -21,6 +21,7 @@ async fn main() -> Result<(), Error> {
 
     // Pre-populate the conversation with the context prompt.
     let mut messages = Vec::<openai::Message>::new_with_context(openai::CONTEXT_PROMPT);
+    let mut steps_since_last_rollup = 0;
 
     // If the program was invoked with arguments, use them as the first user input.
     let args = env::prompt_from_args();
@@ -36,6 +37,8 @@ async fn main() -> Result<(), Error> {
     // Converse until the user enters an empty line.
     let chat = openai::Chat::new(api_base, secret).map_err(|err| err.to_string())?;
     loop {
+        steps_since_last_rollup += 1;
+
         // Generate the next message in the conversation.
         let little_snake = io::start_throbber();
         let reply = chat
@@ -53,7 +56,35 @@ async fn main() -> Result<(), Error> {
             return Err(refusal.into());
         }
         if reply.finish_reason == openai::FinishReason::UsageExceeded {
-            return Err("usage exceeded".into());
+            if steps_since_last_rollup < 11 {
+                // This is helpless by this point.
+                return Err("usage exceeded".into());
+            }
+
+            let before = messages.len();
+            io::show_history_alteration();
+
+            let little_snake = io::start_throbber();
+            let rolled_up = chat.rollup(model, &messages).await;
+            let rolled_up = if let Err(_) = rolled_up {
+                // While `response_format` is not there yet, the structured output is very fragile.
+                chat.rollup(model, &messages).await
+            } else {
+                rolled_up
+            };
+            let rolled_up = rolled_up.map_err(|err| err.to_string())?;
+            little_snake.stop();
+
+            messages.clone_from(&rolled_up);
+
+            let after = messages.len();
+            io::show_history_altered(before, after);
+
+            // Avoid the crash loop.
+            steps_since_last_rollup = 0;
+
+            // And re-trigger the completion with the new, rolled-up messages.
+            continue;
         }
         let calls = reply.message.tool_calls.unwrap_or_default();
         let content = reply.message.content.unwrap_or_default();

@@ -43,3 +43,18 @@ pub fn show_user_input(input: &str) {
     let user_notch = ">>".bright_yellow().dimmed().bold();
     eprintln!("{} {}", user_notch, input);
 }
+
+/// Indicate the history has been altered.
+pub fn show_history_alteration() {
+    let notch = "==".bright_red().dimmed().bold();
+    eprintln!("{}", notch);
+}
+
+/// Tell the user how well the history alteration worked.
+pub fn show_history_altered(before: usize, after: usize) {
+    let notch = "==".bright_red().dimmed().bold();
+    let arrow = "->".dimmed().bold();
+    let before = before.to_string().bright_red().dimmed().bold();
+    let after = after.to_string().bright_red().dimmed().bold();
+    eprintln!("{before} {arrow} {after}\n{notch}\n");
+}
