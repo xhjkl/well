@@ -61,10 +61,11 @@ async fn main() -> Result<(), Error> {
                 return Err("usage exceeded".into());
             }
 
-            io::show_history_alteration();
-
-            let rolled_up = chat.strip(&messages).await.unwrap();
-            messages.clone_from(&rolled_up);
+            io::show_history_will_be_altered();
+            let before = serde_json::to_string(&messages).unwrap().len();
+            messages.strip();
+            let after = serde_json::to_string(&messages).unwrap().len();
+            io::show_history_altered(before, after);
 
             // Avoid the crash loop.
             steps_since_last_rollup = 0;

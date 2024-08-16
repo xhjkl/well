@@ -13,6 +13,9 @@ pub trait VecOfMessages {
 
     /// Tell the assistant how a function call went.
     fn push_function_call_result(&mut self, id: &str, result: &str);
+
+    /// Make a conversation briefer by forgetting the earlier function call results.
+    fn strip(&mut self);
 }
 
 impl VecOfMessages for Vec<Message> {
@@ -48,5 +51,21 @@ impl VecOfMessages for Vec<Message> {
             content: Some(result.to_string()),
             ..Default::default()
         });
+    }
+
+    fn strip(&mut self) {
+        let mut seen_non_tool = false;
+        for message in self.iter_mut().rev() {
+            // Keeping only the last chain of tool calls
+            // so that the model will not get confused.
+            if seen_non_tool && message.role == MessageRole::Tool {
+                // Setting this to `null` does not pass validation
+                // on the OpenAI side, so we set it to an empty string instead.
+                message.content = Some(String::new());
+            }
+            if message.role != MessageRole::Tool {
+                seen_non_tool = true;
+            }
+        }
     }
 }

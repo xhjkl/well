@@ -104,21 +104,4 @@ impl Chat {
         };
         Ok(choice)
     }
-
-    /// Make a conversation briefer by forgetting the earlier function call results.
-    pub async fn strip(&self, messages: &[Message]) -> Result<Vec<Message>> {
-        let mut result = messages.to_vec();
-        let mut seen_non_tool = false;
-        for message in result.iter_mut().rev() {
-            if seen_non_tool {
-                if message.role == MessageRole::Tool {
-                    message.content = None;
-                }
-            }
-            if message.role != MessageRole::Tool {
-                seen_non_tool = true;
-            }
-        }
-        Ok(result)
-    }
 }

@@ -45,7 +45,7 @@ pub fn show_user_input(input: &str) {
 }
 
 /// Indicate the history has been altered.
-pub fn show_history_alteration() {
+pub fn show_history_will_be_altered() {
     let notch = "==".bright_red().dimmed().bold();
     eprintln!("{}", notch);
 }
