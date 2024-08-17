@@ -11,26 +11,25 @@ cargo install well
 ## Usage
 
 ```
-$ echo OPENAI_SECRET='...' > .env
+$ echo OPENAI_API_KEY='...' > .env
 
-$ well what is the most convoluted function across this codebase\?
+$ well is it possible to link against this statically as a library\?
 
->> what is the most convoluted function across this codebase?
+>> is it possible to link against this statically as a library?
 
-<< f{
-  "path": "./src"
-}
+<< f{"path": "."}
+<< F{"path":"Cargo.toml"}
+<< f{"path":"src"}
 
-<< F{
-  "path": "./src/main.rs"
-}
+<< The `src` directory does not contain a `lib.rs` file,
+   suggesting that the project does not explicitly define a library module.
+   The presence of `main.rs` reinforces that it is a standalone binary.
 
-<< The most convoluted function in the codebase is the `run` function in the `main.rs` file. It involves a lot of logic and handles the overall execution of the program, including parsing command-line arguments, setting the working directory, constructing the configuration, building the regex pattern, and performing the search.
-
->>
+   To link it statically, you would generally need to modify the project
+   to include a `lib.rs` and configure `Cargo.toml` accordingly.
 ```
 
-In the above dialog, the model shows which files were read, and finally the model provides an answer.
+In the above dialog, the model shows which files were read, and then the model provides an answer.
 
 This might send the current directory contents to OpenAI servers at the model's discretion,
 but the model is not allowed to step outside the directory the program was run at.
