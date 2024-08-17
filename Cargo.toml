@@ -14,16 +14,16 @@ colored = "2.1.0"
 dotenvy = "0.15.7"
 git2 = { version = "0.19.0", features = ["vendored-libgit2", "vendored-openssl"] }
 monostate = "0.1.13"
-reqwest = { version = "0.12.4", features = ["json"] }
-serde = { version = "1.0.203", features = ["derive"] }
-serde_json = "1.0.117"
-thiserror = "1.0.61"
-tokio = { version = "1.38.0", features = ["full"] }
+reqwest = { version = "0.12.5", features = ["json"] }
+serde = { version = "1.0.208", features = ["derive"] }
+serde_json = "1.0.125"
+thiserror = "1.0.63"
+tokio = { version = "1.39.2", features = ["full"] }
 
 tree-sitter = "0.22.6"
 tree-sitter-python = "0.21.0"
 tree-sitter-rust = "0.21.2"
-tree-sitter-typescript = "0.21.1"
+tree-sitter-typescript = "0.21.2"
 
 [profile.release]
 opt-level = "z"
