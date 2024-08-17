@@ -123,7 +123,7 @@ pub struct SuccessfulCompletionResponse {
     pub model: String,
     pub choices: Vec<CompletionChoice>,
     pub usage: Usage,
-    pub system_fingerprint: String,
+    pub system_fingerprint: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
