@@ -23,7 +23,7 @@ tokio = { version = "1.40.0", features = ["full"] }
 tree-sitter = "0.22.6"
 tree-sitter-python = "0.21.0"
 tree-sitter-rust = "0.21.2"
-tree-sitter-typescript = "0.21.2"
+tree-sitter-typescript = "0.23.0"
 
 [profile.release]
 opt-level = "z"
