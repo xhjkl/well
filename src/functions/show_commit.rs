@@ -14,7 +14,7 @@ pub fn show_commit_with_hash(hash: &str) -> Result<String, String> {
         .map(|dt| dt.to_rfc3339())
         .unwrap_or_default();
     let hash = commit.id().to_string();
-    let summary = commit.summary().unwrap_or_default();
+    let summary = commit.summary().ok().flatten().unwrap_or_default();
     let author = commit.author();
     let author_name = author.name().unwrap_or_default();
     let author_email = author.email().unwrap_or_default();

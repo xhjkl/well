@@ -1,56 +1,30 @@
 use std::io;
 use std::path::Path;
 
-use tree_sitter::{Language, Node, Query, QueryCursor};
+use tree_sitter::{Language, Node, Query, QueryCursor, StreamingIterator};
 
 use super::common::path_spills_up;
 
-/// Pick a [tree_sitter] parser that would likely
-/// handle a file with the given filename extension.
-fn language_for_filename_extension(ext: Option<&str>) -> Option<Language> {
-    let ext = ext?;
-    match ext {
-        "py" => Some(tree_sitter_python::language()),
-        "rs" => Some(tree_sitter_rust::language()),
-        "ts" | "js" => Some(tree_sitter_typescript::language_typescript()),
-        "tsx" | "jsx" => Some(tree_sitter_typescript::language_tsx()),
-        _ => None,
-    }
-}
-
-/// Given a filename extension, pick a pair of Tree Sitter Queries
-/// that will match definitions and references for the language.
-fn queries_for_filename_extension(ext: Option<&str>) -> Option<(Query, Query)> {
+/// Select a parser and its definition and reference queries for a filename extension.
+fn language_and_queries(ext: Option<&str>) -> Option<(Language, &'static str, &'static str)> {
     use query_expressions::*;
 
-    let ext = ext?;
-    match ext {
-        "py" => Some((
-            Query::new(&tree_sitter_python::language(), python::DEFS).unwrap(),
-            Query::new(&tree_sitter_python::language(), python::REFS).unwrap(),
-        )),
-        "rs" => Some((
-            Query::new(&tree_sitter_rust::language(), rust::DEFS).unwrap(),
-            Query::new(&tree_sitter_rust::language(), rust::REFS).unwrap(),
-        )),
-        "ts" | "js" => Some((
-            Query::new(
-                &tree_sitter_typescript::language_typescript(),
-                typescript::DEFS,
-            )
-            .unwrap(),
-            Query::new(
-                &tree_sitter_typescript::language_typescript(),
-                typescript::REFS,
-            )
-            .unwrap(),
-        )),
-        "tsx" | "jsx" => Some((
-            Query::new(&tree_sitter_typescript::language_tsx(), typescript::DEFS).unwrap(),
-            Query::new(&tree_sitter_typescript::language_tsx(), typescript::REFS).unwrap(),
-        )),
-        _ => None,
-    }
+    let (language, defs, refs) = match ext? {
+        "py" => (tree_sitter_python::LANGUAGE, python::DEFS, python::REFS),
+        "rs" => (tree_sitter_rust::LANGUAGE, rust::DEFS, rust::REFS),
+        "ts" | "js" => (
+            tree_sitter_typescript::LANGUAGE_TYPESCRIPT,
+            typescript::DEFS,
+            typescript::REFS,
+        ),
+        "tsx" | "jsx" => (
+            tree_sitter_typescript::LANGUAGE_TSX,
+            typescript::DEFS,
+            typescript::REFS,
+        ),
+        _ => return None,
+    };
+    Some((language.into(), defs, refs))
 }
 
 /// Outline the definitions across all the files
@@ -81,19 +55,17 @@ fn query_ast_of_directory(path: &Path) -> io::Result<String> {
 fn all_matches(query: &Query, node: Node, text_provider: &str) -> Vec<String> {
     use std::collections::HashSet;
 
+    let source = text_provider.as_bytes();
     let mut cursor = QueryCursor::new();
-    cursor
-        .matches(query, node, text_provider.as_bytes())
-        .flat_map(|m| m.captures)
-        .map(|c| {
-            c.node
-                .utf8_text(text_provider.as_bytes())
-                .expect("Node::utf8_text")
-                .to_string()
-        })
-        .collect::<HashSet<_>>()
-        .into_iter()
-        .collect()
+    let mut matches = cursor.matches(query, node, source);
+    let mut names = HashSet::new();
+    while let Some(query_match) = matches.next() {
+        for capture in query_match.captures() {
+            let name = capture.node.utf8_text(source).expect("Node::utf8_text");
+            names.insert(name);
+        }
+    }
+    names.into_iter().map(str::to_owned).collect()
 }
 
 /// Produce an S-expression representing the exports and imports of this module.
@@ -104,8 +76,8 @@ fn all_matches(query: &Query, node: Node, text_provider: &str) -> Vec<String> {
 ///
 /// If parsing fails, return the unit value `()`.
 fn query_ast_of_file(path: &Path) -> io::Result<String> {
-    let filename_extension = Path::new(&path).extension().and_then(|ext| ext.to_str());
-    let Some(language) = language_for_filename_extension(filename_extension) else {
+    let filename_extension = path.extension().and_then(|ext| ext.to_str());
+    let Some((language, defs, refs)) = language_and_queries(filename_extension) else {
         return Ok("()".into());
     };
     let mut parser = tree_sitter::Parser::new();
@@ -119,10 +91,8 @@ fn query_ast_of_file(path: &Path) -> io::Result<String> {
     };
     let root_node = tree.root_node();
 
-    let Some((defs, refs)) = queries_for_filename_extension(filename_extension) else {
-        return Ok("()".into());
-    };
-
+    let defs = Query::new(&language, defs).expect("valid definition query");
+    let refs = Query::new(&language, refs).expect("valid reference query");
     let defs = all_matches(&defs, root_node, &source_code);
     let refs = all_matches(&refs, root_node, &source_code);
 
@@ -252,6 +222,45 @@ mod query_expressions {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn captures_definitions_and_references_with_each_grammar() {
+        for (ext, source, definition, reference) in [
+            (
+                "py",
+                "def sample():\n    return target()\n",
+                "sample",
+                "target",
+            ),
+            ("rs", "fn sample() { target(); }", "sample", "target"),
+            (
+                "ts",
+                "interface Sample {}\nnew Target();",
+                "Sample",
+                "Target",
+            ),
+            (
+                "tsx",
+                "interface Sample {}\nconst element = <div />;\nnew Target();",
+                "Sample",
+                "Target",
+            ),
+        ] {
+            let (language, defs, refs) = language_and_queries(Some(ext)).unwrap();
+            let mut parser = tree_sitter::Parser::new();
+            parser.set_language(&language).unwrap();
+            let tree = parser.parse(source, None).unwrap();
+            let defs = Query::new(&language, defs).unwrap();
+            let refs = Query::new(&language, refs).unwrap();
+            let defs = all_matches(&defs, tree.root_node(), source);
+            let refs = all_matches(&refs, tree.root_node(), source);
+            assert!(
+                defs.iter().any(|name| name == definition),
+                "{ext}: {defs:?}"
+            );
+            assert!(refs.iter().any(|name| name == reference), "{ext}: {refs:?}");
+        }
+    }
 
     #[test]
     #[ignore = "run manually to see output"]

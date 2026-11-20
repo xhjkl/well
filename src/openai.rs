@@ -11,6 +11,8 @@ pub use self::prompts::*;
 pub use self::schema::*;
 pub use self::vec_of_messages::VecOfMessages;
 
+pub(super) const GPT_6_LUNA: &str = "gpt-6-luna";
+
 /// Result with the right error.
 pub type Result<T> = std::result::Result<T, error::OpenAIError>;
 
@@ -78,16 +80,16 @@ impl Chat {
         messages: &[Message],
         tools: &serde_json::Value,
     ) -> Result<CompletionChoice> {
-        let completion: CompletionResponse = self
-            .call(
-                "chat/completions",
-                &json!({
-                    "model": model,
-                    "messages": messages,
-                    "tools": tools,
-                }),
-            )
-            .await?;
+        let mut body = json!({
+            "model": model,
+            "messages": messages,
+            "tools": tools,
+        });
+        if model == GPT_6_LUNA {
+            // Disabling reasoning for Luna so Chat Completions can call tools.
+            body["reasoning_effort"] = json!("none");
+        }
+        let completion: CompletionResponse = self.call("chat/completions", &body).await?;
 
         let choices = match completion {
             CompletionResponse::Success(SuccessfulCompletionResponse { choices, .. }) => choices,

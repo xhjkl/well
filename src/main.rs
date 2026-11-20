@@ -16,7 +16,7 @@ async fn main() -> Result<(), Error> {
         return Err("expected env `OPENAI_API_KEY` to be available".into());
     }
     let api_base = api_base.as_deref().unwrap_or("https://api.openai.com/v1");
-    let model = model.as_deref().unwrap_or("gpt-4o");
+    let model = model.as_deref().unwrap_or(openai::GPT_6_LUNA);
     let secret = secret.as_deref();
 
     // Pre-populate the conversation with the context prompt.
